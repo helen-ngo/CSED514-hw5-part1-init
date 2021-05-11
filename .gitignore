@@ -138,3 +138,6 @@ dmypy.json
 cython_debug/
 
 .idea
+.DS_Store
+Pipfile
+Pipfile.lock
