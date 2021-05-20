@@ -66,9 +66,9 @@ class TestVaccineCaregiver(unittest.TestCase):
                     # check if schedule has been correctly inserted into CareGiverSchedule
                     sqlQuery = '''
                                SELECT *
-                               FROM Caregivers, CareGiverSchedule
+                               FROM Caregivers, CaregiverSchedule
                                WHERE Caregivers.CaregiverName = 'Steve Ma'
-                                   AND Caregivers.CaregiverId = CareGiverSchedule.CaregiverId
+                                   AND Caregivers.CaregiverId = CaregiverSchedule.CaregiverId
                                '''
                     cursor.execute(sqlQuery)
                     rows = cursor.fetchall()
@@ -78,13 +78,13 @@ class TestVaccineCaregiver(unittest.TestCase):
                         slot_hour = row["SlotHour"]
                         slot_minute = row["SlotMinute"]
                         if slot_hour not in hoursToSchedlue or slot_minute not in minutesToSchedlue:
-                            self.fail("CareGiverSchedule verification failed")
+                            self.fail("CaregiverSchedule verification failed")
                     # clear the tables after testing, just in-case
                     clear_tables(sqlClient)
                 except Exception:
                     # clear the tables if an exception occurred
                     clear_tables(sqlClient)
-                    self.fail("CareGiverSchedule verification failed")
+                    self.fail("CaregiverSchedule verification failed")
 
 
 if __name__ == '__main__':

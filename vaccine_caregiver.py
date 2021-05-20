@@ -8,11 +8,11 @@ class VaccineCaregiver:
     def __init__(self, name, cursor):
         _hoursToSchedlue = [10,11]
         _appointmentDuration = 15
-        self.sqltext = "INSERT INTO CareGivers (CaregiverName) VALUES ('" + name + "')"
+        self.sqltext = "INSERT INTO Caregivers (CaregiverName) VALUES ('" + name + "')"
         self.caregiverId = 0
         try: 
             cursor.execute(self.sqltext)
-            cursor.connection.commit()
+            # cursor.connection.commit()
             cursor.execute("SELECT @@IDENTITY AS 'Identity'; ")
             _identityRow = cursor.fetchone()
             self.caregiverId = _identityRow['Identity']
@@ -46,7 +46,7 @@ class VaccineCaregiver:
             for _hr in _hoursToSchedlue:
                 _startTime = 0
                 while _startTime < 60:
-                    _sqltext2 = ("INSERT INTO CareGiverSchedule (caregiverid, WorkDay, SlotHour, SlotMinute) VALUES (") 
+                    _sqltext2 = ("INSERT INTO CaregiverSchedule (caregiverid, WorkDay, SlotHour, SlotMinute) VALUES (") 
                     _sqltext2 += str(self.caregiverId) + ", '" + _formattedDate + "', " 
                     _sqltext2 += str(_hr) + ", "  
                     _sqltext2 += str(_startTime) + ")" 
