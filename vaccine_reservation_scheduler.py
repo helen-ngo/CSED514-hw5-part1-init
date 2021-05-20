@@ -21,7 +21,6 @@ class VaccineReservationScheduler:
         ''' Method that reserves a CareGiver appointment slot &
         returns the unique scheduling slotid
         Should return 0 if no slot is available  or -1 if there is a database error'''
-        # Note to students: this is a stub that needs to replaced with your code
         self.slotSchedulingId = 0
         self.getAppointmentSQL = '''
                                  SELECT TOP(1) CaregiverSlotSchedulingId
@@ -56,16 +55,30 @@ class VaccineReservationScheduler:
         '''method that marks a slot on Hold with a definite reservation  
         slotid is the slot that is currently on Hold and whose status will be updated 
         returns the same slotid when the database update succeeds 
-        returns 0 is there if the database update dails 
+        returns 0 is there if the database update fails 
         returns -1 the same slotid when the database command fails
-        returns 21 if the slotid parm is invalid '''
-        # Note to students: this is a stub that needs to replaced with your code
+        returns -2 if the slotid parm is invalid '''
         if slotid < 1:
             return -2
         self.slotSchedulingId = slotid
-        self.getAppointmentSQL = "SELECT something... "
+        self.getAppointmentSQL = '''
+                                 SELECT *
+                                 FROM CaregiverSchedule
+                                 WHERE CaregiverSlotSchedulingId =
+                                 '''
+        self.scheduleAppointmentSQL += str(self.slotSchedulingId)
         try:
             cursor.execute(self.getAppointmentSQL)
+            _slotRow = cursor.fetchone()
+            if len(_slotRow) < 1:
+                self.slotSchedulingId = 0
+            else:
+                self.scheduleAppointmentSQL = '''
+                                              UPDATE CaregiverSchedule 
+                                              SET SlotStatus = 2 
+                                              WHERE CaregiverSlotSchedulingId =
+                                              '''
+                self.scheduleAppointmentSQL += str(self.slotSchedulingId) 
             return self.slotSchedulingId
         except pymssql.Error as db_err:    
             print("Database Programming Error in SQL Query processing! ")
