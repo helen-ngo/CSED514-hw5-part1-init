@@ -23,10 +23,24 @@ class VaccineReservationScheduler:
         Should return 0 if no slot is available  or -1 if there is a database error'''
         # Note to students: this is a stub that needs to replaced with your code
         self.slotSchedulingId = 0
-        self.getAppointmentSQL = "SELECT something..."
+        self.getAppointmentSQL = '''
+                                 SELECT TOP(1) CaregiverSlotSchedulingId
+                                 FROM CaregiverSchedule
+                                 WHERE VaccineAppointmentId IS NULL
+                                 ORDER BY RAND()
+                                 '''
         try:
             cursor.execute(self.getAppointmentSQL)
-            cursor.connection.commit()
+            _slotRow = cursor.fetchone()
+            if len(_slotRow) == 1:
+                self.slotSchedulingId = _slotRow['CaregiverSlotSchedulingId']
+                self.holdAppointmentSQL = '''
+                                          UPDATE CaregiverSchedule 
+                                          SET SlotStatus = 1 
+                                          WHERE CaregiverSlotSchedulingId =
+                                          '''
+                self.holdAppointmentSQL += str(self.slotSchedulingId) 
+                cursor.connection.commit()
             return self.slotSchedulingId
         
         except pymssql.Error as db_err:
@@ -72,10 +86,10 @@ if __name__ == '__main__':
             # get a cursor from the SQL connection
             dbcursor = sqlClient.cursor(as_dict=True)
 
-            # Iniialize the caregivers, patients & vaccine supply
+            # Inialize the caregivers, patients & vaccine supply
             caregiversList = []
             caregiversList.append(VaccineCaregiver('Carrie Nation', dbcursor))
-            caregiversList.append(VaccineCaregiver('Clare Barton', dbcursor))
+            caregiversList.append(VaccineCaregiver('Clara Barton', dbcursor))
             caregivers = {}
             for cg in caregiversList:
                 cgid = cg.caregiverId
