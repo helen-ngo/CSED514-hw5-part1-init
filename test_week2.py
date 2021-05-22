@@ -171,10 +171,12 @@ class TestCOVID19Vaccine(unittest.TestCase):
                     
                     # Create appointments to reserve vaccines from
                     sqlQuery = '''
-                               INSERT INTO VaccineAppointments (PatientId, VaccinationStatus)
-                               VALUES (0, 1);
-                               INSERT INTO VaccineAppointments (PatientId, VaccinationStatus)
-                               VALUES (0, 1);
+                               INSERT INTO VaccineAppointments (PatientId)
+                               VALUES (0);
+                               INSERT INTO VaccineAppointments (PatientId)
+                               VALUES (0);
+                               INSERT INTO PatientStatus (PatientId, VaccinationStatus)
+                               VALUES (0,1);
                                '''
                     cursor.execute(sqlQuery)
                     

@@ -9,14 +9,16 @@ IF OBJECT_ID ( 'InitScheduerApp', 'P' ) IS NOT NULL
 GO  
 
 --- Drop commands to restructure the DB
+DROP TABLE IF EXISTS CareGiverSchedule
 DROP TABLE IF EXISTS VaccineAppointments
+DROP TABLE IF EXISTS PatientStatus
+DROP TABLE IF EXISTS VaccineLineItems
 DROP TABLE IF EXISTS Vaccines
 DROP TABLE IF EXISTS Patients
-DROP TABLE IF EXISTS CareGiverSchedule
 DROP TABLE IF EXISTS AppointmentStatusCodes
 DROP TABLE IF EXISTS VaccinationStatusCodes
 DROP TABLE IF EXISTS Caregivers
-Go
+GO
 
 --- DDL to define the VaccineReservationScheduler Tables 
 CREATE PROCEDURE InitScheduerApp
@@ -29,7 +31,7 @@ Create Table Caregivers(
 
 Create Table AppointmentStatusCodes(
 	StatusCodeId INT PRIMARY KEY,
-	StatusCode   varchar(30)
+	StatusCode varchar(30)
 );
 
 INSERT INTO AppointmentStatusCodes (statusCodeId, StatusCode)
@@ -67,6 +69,64 @@ INSERT INTO VaccinationStatusCodes (statusCodeId, StatusCode)
 INSERT INTO VaccinationStatusCodes (statusCodeId, StatusCode)
 	VALUES (7, 'Vaccination Complete');
 
+Create Table Patients(
+	PatientId INT IDENTITY(0,1) PRIMARY KEY,
+	PatientName VARCHAR(50),
+	PatientBirthdate DATE ,
+	PatientEmail VARCHAR(254),
+	PatientPhone VARCHAR(10)
+);
+
+INSERT INTO Patients (PatientName, PatientBirthdate)
+	VALUES ('Anonymous', '1985-10-30');
+
+Create Table Vaccines(
+	VaccineName VARCHAR(50) PRIMARY KEY,
+	VaccineSupplier VARCHAR(50),
+	VaccineBrand VARCHAR(50), 
+	DoseSeries INT,
+	DoseVolume INT,
+	IntervalBetweenDoses INT,
+	VaccineMinAge INT,
+	MinAgeOfEUA INT
+);
+
+CREATE TABLE VaccineLineItems(
+	VaccineName VARCHAR(50) NOT NULL
+		CONSTRAINT FK_VaccineLineItemsVaccineName FOREIGN KEY (VaccineName)
+			REFERENCES Vaccines(VaccineName),
+	VaccineLotNumber VARCHAR(12) NOT NULL,
+	CONSTRAINT PK_VaccineLineItemsId PRIMARY KEY (VaccineName, VaccineLotNumber),
+	ExpirationDate DATE,
+	Quantity INT,
+	DeliveryDate DATE,
+	Inactive BIT
+);
+
+Create Table VaccineAppointments(
+	VaccineAppointmentId INT Identity PRIMARY KEY, 
+	VaccineName varchar(50),
+	VaccineLotNumber VARCHAR(12),
+		CONSTRAINT FK_VaccineAppointmentsVaccine FOREIGN KEY (VaccineName, VaccineLotNumber)
+			REFERENCES VaccineLineItems(VaccineName, VaccineLotNumber),
+	PatientId int DEFAULT 0 NOT NULL
+		CONSTRAINT FK_VaccineAppointmentsPatientID FOREIGN KEY (PatientId)
+			REFERENCES Patients(PatientId),
+	ReservationDate DATE ,
+	DateCheckedIn DATETIME,
+	DateAdministered DATETIME
+);
+
+CREATE TABLE PatientStatus(
+	PatientId INT NOT NULL,
+	CONSTRAINT FK_PatientStatusPatientId FOREIGN KEY (PatientId) 
+		REFERENCES Patients(PatientId),
+	VaccinationStatus INT NOT NULL
+	CONSTRAINT FK_PatientStatusVaccinationStatus FOREIGN KEY (VaccinationStatus) 
+		REFERENCES VaccinationStatusCodes(StatusCodeId),
+	StatusDate DATETIME
+);
+
 Create Table CaregiverSchedule(
 	CaregiverSlotSchedulingId INT Identity PRIMARY KEY, 
 	CaregiverId INT DEFAULT 0 NOT NULL
@@ -79,71 +139,11 @@ Create Table CaregiverSchedule(
 	SlotStatus INT  DEFAULT 0 NOT NULL
 		CONSTRAINT FK_CaregiverScheduleSlotStatus FOREIGN KEY (SlotStatus) 
 		     REFERENCES AppointmentStatusCodes(StatusCodeId),
-	VaccineAppointmentId INT DEFAULT 0 NOT NULL
+	VaccineAppointmentId INT
 		CONSTRAINT FK_CaregiverScheduleVaccineAppointmentId FOREIGN KEY (VaccineAppointmentId) 
 		     REFERENCES VaccineAppointments(VaccineAppointmentId)
 );
+GO
 
-Create Table Patients(
-	PatientId INT IDENTITY PRIMARY KEY,
-	PatientName VARCHAR(50),
-	PatientBirthdate DATE ,
-	PatientEmail VARCHAR(254),
-	PatientPhone VARCHAR(10)
-);
-
-Create Table Vaccines(
-	VaccineName  VARCHAR(50) PRIMARY KEY,
-	VaccineSupplier VARCHAR(50) PRIMARY KEY,
-	VaccineBrand VARCHAR(50), 
-	DoseSeries INT,
-	DoseVolume INT,
-	IntervalBetweenDoses INT,
-	VaccineMinAge INT,
-	MinAgeOfEUA INT
-);
-
-CREATE TABLE VaccineOrders(
-	OrderId INT IDENTITY PRIMARY KEY,
-	VaccineSupplier VARCHAR(50) NOT NULL
-		CONSTRAINT FK_VaccineOrdersVaccineSupplier FOREIGN KEY (VaccineSupplier)
-			REFERENCES Vaccines(VaccineSupplier),
-	InvoiceDate DATE 
-);
-
-CREATE TABLE VaccineLineItems(
-	OrderId INT
-		CONSTRAINT FK_VaccineLineItemsOrderId FOREIGN KEY (OrderId)
-			REFERENCES VaccineOrders(OrderId),
-	VaccineName VARCHAR(50) NOT NULL
-		CONSTRAINT FK_VaccineLineItemsVaccineName FOREIGN KEY (VaccineName)
-			REFERENCES Vaccines(VaccineName),
-	VaccineLotNumber VARCHAR(12) PRIMARY KEY,
-	ExpirationDate DATE,
-	Quantity INT,
-	DeliveryDate DATE,
-	Inactive BIT
-);
-
-Create Table VaccineAppointments(
-	VaccineAppointmentId INT Identity PRIMARY KEY, 
-	VaccineName varchar(50) ,
-	VaccineLotNumer VARCHAR(12)
-		CONSTRAINT FK_VaccineAppointmentsLotNumber FOREIGN KEY (VaccineLotNumber)
-			REFERENCES VaccineLineItems(VaccineLotNumber),
-	PatientId int
-		CONSTRAINT FK_VaccineAppointmentsPatientID FOREIGN KEY (PatientId)
-			REFERENCES Patients(PatientId),
-	ReservationDate DATE ,
-	DateCheckedIn DATETIME,
-	DateAdministered DATETIME,
-	VaccinationStatus INT NOT NULL
-		CONSTRAINT FK_VaccineAppointmentsStatusCodes FOREIGN KEY (VaccinationStatus) 
-			REFERENCES VaccinationStatusCodes(StatusCodeId),
-	RescheduledAppointmentId INT
-		CONSTRAINT FK_VaccineAppointmentsRescheduledId FOREIGN KEY (RescheduledAppointmentId) 
-			REFERENCES VaccineAppointments(VaccineAppointmentId)
-);
-
--- -- Create data tables for application
--- EXECUTE InitScheduerApp;    
+-- Create data tables for application
+EXECUTE InitScheduerApp;    
