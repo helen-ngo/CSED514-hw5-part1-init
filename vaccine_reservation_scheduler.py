@@ -17,17 +17,19 @@ class VaccineReservationScheduler:
     def __init__(self):
         return
 
-    def PutHoldOnAppointmentSlot(self, cursor):
+    def PutHoldOnAppointmentSlot(self, cursor, date=None):
         ''' Method that reserves a CareGiver appointment slot &
         returns the unique scheduling slotid
         Should return 0 if no slot is available  or -1 if there is a database error'''
+        if date == None:
+            self.date = date.today()
         self.slotSchedulingId = 0
         self.getAppointmentSQL = '''
                                  SELECT TOP(1) CaregiverSlotSchedulingId
                                  FROM CaregiverSchedule
                                  WHERE VaccineAppointmentId IS NULL
-                                 ORDER BY RAND()
                                  '''
+        self.getAppointmentSQL += "AND WorkDay > '" + str(date) + "'"
         try:
             cursor.execute(self.getAppointmentSQL)
             _slotRow = cursor.fetchone()
@@ -38,7 +40,7 @@ class VaccineReservationScheduler:
                                           SET SlotStatus = 1 
                                           WHERE CaregiverSlotSchedulingId =
                                           '''
-                self.holdAppointmentSQL += str(self.slotSchedulingId) 
+                self.holdAppointmentSQL += str(self.slotSchedulingId)
                 cursor.connection.commit()
             return self.slotSchedulingId
         

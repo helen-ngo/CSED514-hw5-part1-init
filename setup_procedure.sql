@@ -105,14 +105,14 @@ CREATE TABLE VaccineLineItems(
 
 Create Table VaccineAppointments(
 	VaccineAppointmentId INT Identity PRIMARY KEY, 
-	VaccineName varchar(50),
+	VaccineName varchar(50) NOT NULL,
 	VaccineLotNumber VARCHAR(12),
 		CONSTRAINT FK_VaccineAppointmentsVaccine FOREIGN KEY (VaccineName, VaccineLotNumber)
 			REFERENCES VaccineLineItems(VaccineName, VaccineLotNumber),
 	PatientId int DEFAULT 0 NOT NULL
 		CONSTRAINT FK_VaccineAppointmentsPatientID FOREIGN KEY (PatientId)
 			REFERENCES Patients(PatientId),
-	ReservationDate DATE ,
+	ReservationDate DATETIME DEFAULT GETDATE(),
 	DateCheckedIn DATETIME,
 	DateAdministered DATETIME
 );
@@ -124,6 +124,7 @@ CREATE TABLE PatientStatus(
 	VaccinationStatus INT NOT NULL
 	CONSTRAINT FK_PatientStatusVaccinationStatus FOREIGN KEY (VaccinationStatus) 
 		REFERENCES VaccinationStatusCodes(StatusCodeId),
+	CONSTRAINT PK_PatientStatusId PRIMARY KEY (PatientId, VaccinationStatus),
 	StatusDate DATETIME
 );
 
