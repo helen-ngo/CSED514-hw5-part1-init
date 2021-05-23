@@ -24,14 +24,14 @@ class VaccinePatient:
                 print("Exception message: " + db_err.args[1])
             print("SQL text that resulted in an Error: " + self.sqltext)
 
-    def ReserveAppointment(CaregiverSchedulingID, Vaccine, cursor)
+    def ReserveAppointment(CaregiverSchedulingID, Vaccine, cursor):
         # validating the CaregiverSchedule slot id parm
         # create an initial entry in the VaccineAppointment Table
         # flag the Patient as “Queued for 1st Dose”
         # while
         return True
 
-    def ScheduleAppointment()
+    def ScheduleAppointment():
         # Connect VaccineAppointment to CaregiverScheduler
         # update the Patient’s VaccineStatus field
         # maintain the Vaccine inventory
