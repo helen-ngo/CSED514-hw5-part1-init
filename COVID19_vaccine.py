@@ -54,12 +54,14 @@ class COVID19Vaccine:
             cursor.execute(sqltext_3)
             _vaccineRow = cursor.fetchone()
             self.booked_doses = _vaccineRow['Booked_Doses']
-            if self.total_doses - self.booked_doses < 2:
-                self.fail("Reserving " + name + "doses failed.")
-            cursor.execute(self.sqltext)
-            cursor.connection.commit()
-            print('Query executed successfully. Reserved 2 of doses.')
+            if int(self.total_doses) - int(self.booked_doses) >= 2:
+                cursor.execute(self.sqltext)
+                print('Query executed successfully. Reserved 2 of doses.')
+            else:
+                cursor.connection.rollback()
+                raise Exception('Only ' + str(int(self.total_doses) - int(self.booked_doses)) + ' dose remaining.')
         except pymssql.Error as db_err:
+            cursor.connection.rollback()
             print("Database Programming Error in SQL Query processing for Vaccines doses!")
             print("Exception code: " + str(db_err.args[0]))
             if len(db_err.args) > 1:

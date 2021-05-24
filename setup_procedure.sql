@@ -105,7 +105,7 @@ CREATE TABLE VaccineLineItems(
 
 Create Table VaccineAppointments(
 	VaccineAppointmentId INT Identity PRIMARY KEY, 
-	VaccineName varchar(50) NOT NULL,
+	VaccineName varchar(50),
 	VaccineLotNumber VARCHAR(12),
 		CONSTRAINT FK_VaccineAppointmentsVaccine FOREIGN KEY (VaccineName, VaccineLotNumber)
 			REFERENCES VaccineLineItems(VaccineName, VaccineLotNumber),

@@ -21,19 +21,22 @@ class VaccineReservationScheduler:
         ''' Method that reserves a CareGiver appointment slot &
         returns the unique scheduling slotid
         Should return 0 if no slot is available  or -1 if there is a database error'''
-        if date == None:
-            self.date = date.today()
+        if date is None:
+            self.date = datetime.date.today()
+        else:
+            self.date = date
         self.slotSchedulingId = 0
         self.getAppointmentSQL = '''
                                  SELECT TOP(1) CaregiverSlotSchedulingId
                                  FROM CaregiverSchedule
                                  WHERE VaccineAppointmentId IS NULL
+                                 AND SlotStatus = 0
                                  '''
-        self.getAppointmentSQL += "AND WorkDay > '" + str(date) + "'"
+        self.getAppointmentSQL += "AND WorkDay >= '" + str(self.date) + "'"
         try:
             cursor.execute(self.getAppointmentSQL)
             _slotRow = cursor.fetchone()
-            if len(_slotRow) == 1:
+            if _slotRow is not None:
                 self.slotSchedulingId = _slotRow['CaregiverSlotSchedulingId']
                 self.holdAppointmentSQL = '''
                                           UPDATE CaregiverSchedule 
@@ -41,7 +44,7 @@ class VaccineReservationScheduler:
                                           WHERE CaregiverSlotSchedulingId =
                                           '''
                 self.holdAppointmentSQL += str(self.slotSchedulingId)
-                cursor.connection.commit()
+                cursor.execute(self.holdAppointmentSQL)
             return self.slotSchedulingId
         
         except pymssql.Error as db_err:
