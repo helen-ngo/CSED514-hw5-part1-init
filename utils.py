@@ -5,7 +5,7 @@ def clear_tables(client):
                DELETE FROM VaccineAppointments
                DBCC CHECKIDENT ('VaccineAppointments', RESEED, 0)
                Truncate Table PatientStatus
-               Delete From VaccineLineItems
+               Delete From VaccineBatches
                DELETE FROM Caregivers
                DBCC CHECKIDENT ('Caregivers', RESEED, 0)
                Delete From Patients WHERE PatientId > 0

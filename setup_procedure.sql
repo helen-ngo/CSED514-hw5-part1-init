@@ -12,7 +12,7 @@ GO
 DROP TABLE IF EXISTS CareGiverSchedule
 DROP TABLE IF EXISTS VaccineAppointments
 DROP TABLE IF EXISTS PatientStatus
-DROP TABLE IF EXISTS VaccineLineItems
+DROP TABLE IF EXISTS VaccineBatches
 DROP TABLE IF EXISTS Vaccines
 DROP TABLE IF EXISTS Patients
 DROP TABLE IF EXISTS AppointmentStatusCodes
@@ -91,14 +91,15 @@ Create Table Vaccines(
 	MinAgeOfEUA INT
 );
 
-CREATE TABLE VaccineLineItems(
+CREATE TABLE VaccineBatches(
 	VaccineName VARCHAR(50) NOT NULL
-		CONSTRAINT FK_VaccineLineItemsVaccineName FOREIGN KEY (VaccineName)
+		CONSTRAINT FK_VaccineBatchesVaccineName FOREIGN KEY (VaccineName)
 			REFERENCES Vaccines(VaccineName),
 	VaccineLotNumber VARCHAR(12) NOT NULL,
-	CONSTRAINT PK_VaccineLineItemsId PRIMARY KEY (VaccineName, VaccineLotNumber),
+	CONSTRAINT PK_VaccineBatchesId PRIMARY KEY (VaccineName, VaccineLotNumber),
 	ExpirationDate DATE,
-	Quantity INT,
+	OwnedDoses INT,
+	ReservedDoses INT,
 	DeliveryDate DATE,
 	Inactive BIT
 );
@@ -108,7 +109,7 @@ Create Table VaccineAppointments(
 	VaccineName varchar(50),
 	VaccineLotNumber VARCHAR(12),
 		CONSTRAINT FK_VaccineAppointmentsVaccine FOREIGN KEY (VaccineName, VaccineLotNumber)
-			REFERENCES VaccineLineItems(VaccineName, VaccineLotNumber),
+			REFERENCES VaccineBatches(VaccineName, VaccineLotNumber),
 	PatientId int DEFAULT 0 NOT NULL
 		CONSTRAINT FK_VaccineAppointmentsPatientID FOREIGN KEY (PatientId)
 			REFERENCES Patients(PatientId),
