@@ -70,7 +70,7 @@ INSERT INTO VaccinationStatusCodes (statusCodeId, StatusCode)
 	VALUES (7, 'Vaccination Complete');
 
 Create Table Patients(
-	PatientId INT IDENTITY(0,1) PRIMARY KEY,
+	PatientId INT IDENTITY PRIMARY KEY,
 	PatientName VARCHAR(50),
 	PatientBirthdate DATE ,
 	PatientEmail VARCHAR(254),
@@ -98,8 +98,8 @@ CREATE TABLE VaccineBatches(
 	VaccineLotNumber VARCHAR(12) NOT NULL,
 	CONSTRAINT PK_VaccineBatchesId PRIMARY KEY (VaccineName, VaccineLotNumber),
 	ExpirationDate DATE,
-	OwnedDoses INT,
-	ReservedDoses INT,
+	OwnedDoses INT DEFAULT 0,
+	ReservedDoses INT DEFAULT 0,
 	DeliveryDate DATE,
 	Inactive BIT
 );

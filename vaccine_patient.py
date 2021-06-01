@@ -95,7 +95,11 @@ class VaccinePatient:
         
         try:
 
-            self.inventory = COVID19Vaccine.ReserveDoses(self, name=Vaccine.vaccine_name, patient_id=Vaccine.patient_id, date=Vaccine.intial_dose_date, cursor=cursor)
+            self.inventory = COVID19Vaccine.ReserveDoses(self, name=Vaccine.vaccine_name, date=Vaccine.intial_dose_date, cursor=cursor)
+
+            # Update vaccine to be used in appointment table
+            self.sqltext = "UPDATE TOP(2) VaccineAppointments " + "SET VaccineName = '" + Vaccine.vaccine_name + "' WHERE PatientId = " + str(Vaccine.patient_id) + " AND VaccineName IS NULL"
+            cursor.execute(self.sqltext)
 
             # Query for current patient status
             sqlQuery = '''

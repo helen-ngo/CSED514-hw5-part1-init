@@ -1,5 +1,4 @@
-from datetime import datetime
-from datetime import timedelta
+import datetime
 import pymssql
 
 
@@ -23,8 +22,8 @@ class COVID19Vaccine:
                 print("Exception message: " + db_err.args[1])
             print("SQL text that resulted in an Error: " + self.sqltext)
 
-    def AddDoses(self, name, lot_number, quantity, cursor):
-        self.sqltext = "INSERT INTO VaccineBatches (VaccineName, VaccineLotNumber, OwnedDoses) VALUES ('" + name + "', '" + lot_number + "', '" + str(quantity) + "')"
+    def AddDoses(self, name, lot_number, expiration_date, quantity, cursor):
+        self.sqltext = "INSERT INTO VaccineBatches (VaccineName, VaccineLotNumber, ExpirationDate, OwnedDoses) VALUES ('" + name + "', '" + lot_number + "', '" + str(expiration_date) + "', '" + str(quantity) + "')"
         try: 
             cursor.execute(self.sqltext)
             cursor.connection.commit()
@@ -37,50 +36,44 @@ class COVID19Vaccine:
                 print("Exception message: " + db_err.args[1])
             print("SQL text that resulted in an Error: " + self.sqltext)
 
-    def ReserveDoses(self, name, patient_id, date, cursor):
-        self.sqltext = "UPDATE TOP(2) VaccineAppointments " + "SET VaccineName = '" + name + "' WHERE PatientId = " + str(patient_id) + " AND VaccineName IS NULL"
+    def ReserveDoses(self, name, date, cursor):
         try: 
-            
             # Set first dose date
             self.dose_date = date
             
             # Query available doses for first dose date
-            self.sqltext_2 = "SELECT SUM(OwnedDoses) AS Total_Doses, SUM(ReservedDoses) AS Booked_Doses, Total_Doses - Booked_Doses AS Available_Doses"
+            self.sqltext_2 = "SELECT SUM(OwnedDoses) AS Available_Doses"
             self.sqltext_2 += " FROM VaccineBatches"
             self.sqltext_2 += " WHERE VaccineName = '" + name + "'"
-            self.sqltext_2 += " AND ExpirationDate > '" + self.dose_date + "'"
+            self.sqltext_2 += " AND ExpirationDate > '" + str(self.dose_date) + "'"
             cursor.execute(self.sqltext_2)
             _vaccineRow = cursor.fetchone()
             self.first_doses_available = _vaccineRow['Available_Doses']
 
             # Reserved first dose
-            if self.first_doses_available >= 2:
-                self.sqltext_3 = "UPDATE TOP(2) VaccineBatches"
-                # Mark the slot as “Scheduled”
-                self.sqltext_3 += " SET ReservedDoses = ReservedDoses + 1 ,"
-                self.sqltext_3 += " WHERE VaccineName = '" + name + "'"
-                self.sqltext_3 += " AND ExpirationDate > '" + self.dose_date + "'"
-                self.sqltext_3 += " ORDER BY ExpirationDate"
-                cursor.execute(self.sqltext)
-            else:
+            if (self.first_doses_available is None) or (self.first_doses_available < 2):
                 cursor.connection.rollback()
-                raise Exception('Only ' + self.first_doses_available + ' valid dose remaining.')
+                raise Exception('There are not enough ' + name + ' doses.')
+            else:
+                self.sqltext_3 = "UPDATE TOP(1) VaccineBatches"
+                self.sqltext_3 += " SET ReservedDoses = ReservedDoses + 1"
+                self.sqltext_3 += " WHERE VaccineName = '" + name + "'"
+                self.sqltext_3 += " AND ExpirationDate > '" + str(self.dose_date) + "'"
+                cursor.execute(self.sqltext_3)
 
             # Set max second dose date and find avaiable second doses
-            self.dose_date += timedelta(days=42)
+            self.dose_date += datetime.timedelta(days=42)
             cursor.execute(self.sqltext_2)
             _vaccineRow = cursor.fetchone()
             self.second_doses_available = _vaccineRow['Available_Doses']
 
             # Reserve second dose
-            if self.second_doses_available >= 1:
-                cursor.execute(self.sqltext)
-            else:
+            if (self.second_doses_available is None) or (self.second_doses_available < 1):
                 cursor.connection.rollback()
-                raise Exception('Only ' + self.first_doses_available + ' valid dose remaining.')
+                raise Exception('There are not enough ' + name + ' vaccines for both doses.')
+            else:
+                cursor.execute(self.sqltext_3)
 
-            # Update appointment table with vaccine to be used
-            cursor.execute(self.sqltext)
             print('Query executed successfully. Reserved 2 of doses.')
 
         except pymssql.Error as db_err:
@@ -89,4 +82,4 @@ class COVID19Vaccine:
             print("Exception code: " + str(db_err.args[0]))
             if len(db_err.args) > 1:
                 print("Exception message: " + db_err.args[1])
-            print("SQL text that resulted in an Error: " + self.sqltext)
+            print("SQL text that resulted in an Error: " + self.sqltext_3)
