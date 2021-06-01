@@ -42,7 +42,7 @@ class COVID19Vaccine:
             self.dose_date = date
             
             # Query available doses for first dose date
-            self.sqltext_2 = "SELECT SUM(OwnedDoses) AS Available_Doses"
+            self.sqltext_2 = "SELECT SUM(OwnedDoses) - SUM(ReservedDoses) AS Available_Doses"
             self.sqltext_2 += " FROM VaccineBatches"
             self.sqltext_2 += " WHERE VaccineName = '" + name + "'"
             self.sqltext_2 += " AND ExpirationDate > '" + str(self.dose_date) + "'"
