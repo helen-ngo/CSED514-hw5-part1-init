@@ -95,7 +95,7 @@ class VaccinePatient:
         
         try:
 
-            self.inventory = COVID19Vaccine.ReserveDoses(self, name=Vaccine.vaccine_name, patient_id=Vaccine.patient_id, cursor=cursor)
+            self.inventory = COVID19Vaccine.ReserveDoses(self, name=Vaccine.vaccine_name, patient_id=Vaccine.patient_id, date=Vaccine.intial_dose_date, cursor=cursor)
 
             # Query for current patient status
             sqlQuery = '''

@@ -24,7 +24,7 @@ class COVID19Vaccine:
             print("SQL text that resulted in an Error: " + self.sqltext)
 
     def AddDoses(self, name, lot_number, quantity, cursor):
-        self.sqltext = "INSERT INTO VaccineLineItems (VaccineName, VaccineLotNumber, Quantity) VALUES ('" + name + "', '" + lot_number + "', '" + str(quantity) + "')"
+        self.sqltext = "INSERT INTO VaccineBatches (VaccineName, VaccineLotNumber, OwnedDoses) VALUES ('" + name + "', '" + lot_number + "', '" + str(quantity) + "')"
         try: 
             cursor.execute(self.sqltext)
             cursor.connection.commit()
@@ -37,29 +37,52 @@ class COVID19Vaccine:
                 print("Exception message: " + db_err.args[1])
             print("SQL text that resulted in an Error: " + self.sqltext)
 
-    def ReserveDoses(self, name, patient_id, cursor):
+    def ReserveDoses(self, name, patient_id, date, cursor):
         self.sqltext = "UPDATE TOP(2) VaccineAppointments " + "SET VaccineName = '" + name + "' WHERE PatientId = " + str(patient_id) + " AND VaccineName IS NULL"
         try: 
-            # Query total doses
-            sqltext_2 = "SELECT SUM(Quantity) as Total_Doses"
-            sqltext_2 += " FROM VaccineLineItems"
-            sqltext_2 += " WHERE VaccineName = '" + name + "'"
-            cursor.execute(sqltext_2)
+            
+            # Set first dose date
+            self.dose_date = date
+            
+            # Query available doses for first dose date
+            self.sqltext_2 = "SELECT SUM(OwnedDoses) AS Total_Doses, SUM(ReservedDoses) AS Booked_Doses, Total_Doses - Booked_Doses AS Available_Doses"
+            self.sqltext_2 += " FROM VaccineBatches"
+            self.sqltext_2 += " WHERE VaccineName = '" + name + "'"
+            self.sqltext_2 += " AND ExpirationDate > '" + self.dose_date + "'"
+            cursor.execute(self.sqltext_2)
             _vaccineRow = cursor.fetchone()
-            self.total_doses = _vaccineRow['Total_Doses']
-            # Query reserved and used doses
-            sqltext_3 = "SELECT COUNT(*) as Booked_Doses"
-            sqltext_3 += " FROM VaccineAppointments"
-            sqltext_3 += " WHERE VaccineName = '" + name + "'"
-            cursor.execute(sqltext_3)
-            _vaccineRow = cursor.fetchone()
-            self.booked_doses = _vaccineRow['Booked_Doses']
-            if int(self.total_doses) - int(self.booked_doses) >= 2:
+            self.first_doses_available = _vaccineRow['Available_Doses']
+
+            # Reserved first dose
+            if self.first_doses_available >= 2:
+                self.sqltext_3 = "UPDATE TOP(2) VaccineBatches"
+                # Mark the slot as “Scheduled”
+                self.sqltext_3 += " SET ReservedDoses = ReservedDoses + 1 ,"
+                self.sqltext_3 += " WHERE VaccineName = '" + name + "'"
+                self.sqltext_3 += " AND ExpirationDate > '" + self.dose_date + "'"
+                self.sqltext_3 += " ORDER BY ExpirationDate"
                 cursor.execute(self.sqltext)
-                print('Query executed successfully. Reserved 2 of doses.')
             else:
                 cursor.connection.rollback()
-                raise Exception('Only ' + str(int(self.total_doses) - int(self.booked_doses)) + ' dose remaining.')
+                raise Exception('Only ' + self.first_doses_available + ' valid dose remaining.')
+
+            # Set max second dose date and find avaiable second doses
+            self.dose_date += timedelta(days=42)
+            cursor.execute(self.sqltext_2)
+            _vaccineRow = cursor.fetchone()
+            self.second_doses_available = _vaccineRow['Available_Doses']
+
+            # Reserve second dose
+            if self.second_doses_available >= 1:
+                cursor.execute(self.sqltext)
+            else:
+                cursor.connection.rollback()
+                raise Exception('Only ' + self.first_doses_available + ' valid dose remaining.')
+
+            # Update appointment table with vaccine to be used
+            cursor.execute(self.sqltext)
+            print('Query executed successfully. Reserved 2 of doses.')
+
         except pymssql.Error as db_err:
             cursor.connection.rollback()
             print("Database Programming Error in SQL Query processing for Vaccines doses!")
